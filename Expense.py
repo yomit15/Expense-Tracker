@@ -82,6 +82,8 @@ if st.session_state.get('page') == 'Register':
                 register_user(new_username, new_password)
                 st.success('Registration successful! You can now login.')
                 st.session_state.page = 'Login'
+        else:
+            st.error('Please enter both username and password.')
 
 elif st.session_state.get('page') == 'Login':
     st.subheader('Login')
