@@ -9,58 +9,98 @@ st.set_page_config(
     layout="centered",
 )
 
-# File to save the expenses
-EXPENSE_FILE = 'expenses.json'
+# Directory to store user data
+USER_DATA_DIR = 'user_data'
 
-# Load expenses from file
-def load_expenses():
-    if os.path.exists(EXPENSE_FILE):
+# Create directory if it doesn't exist
+if not os.path.exists(USER_DATA_DIR):
+    os.makedirs(USER_DATA_DIR)
+
+# Function to load user data
+def load_user_data(username):
+    user_data_file = os.path.join(USER_DATA_DIR, f"{username}.json")
+    if os.path.exists(user_data_file):
         try:
-            with open(EXPENSE_FILE, 'r') as f:
+            with open(user_data_file, 'r') as f:
                 return json.load(f)
         except (json.JSONDecodeError, FileNotFoundError):
-            return []
-    return []
+            return {}
+    return {}
 
-# Save expenses to file
-def save_expenses(expenses):
-    with open(EXPENSE_FILE, 'w') as f:
-        json.dump(expenses, f)
+# Function to save user data
+def save_user_data(username, data):
+    user_data_file = os.path.join(USER_DATA_DIR, f"{username}.json")
+    with open(user_data_file, 'w') as f:
+        json.dump(data, f)
 
-# Generate a unique session ID for each device if it doesn't exist
-if 'session_id' not in st.session_state:
-    st.session_state.session_id = str(uuid.uuid4())
+# Function to authenticate user
+def authenticate_user(username, password):
+    user_data = load_user_data(username)
+    return user_data.get('password') == password
 
-# Initialize session state for expenses if it doesn't exist
-if 'expenses' not in st.session_state:
-    st.session_state.expenses = load_expenses()
+# Function to register new user
+def register_user(username, password):
+    user_data = {'password': password, 'expenses': []}
+    save_user_data(username, user_data)
 
 # Function to add an expense
-def add_expense(item_name, item_amount):
+def add_expense(username, item_name, item_amount):
+    user_data = load_user_data(username)
     if item_name and item_amount:
-        st.session_state.expenses.append({'name': item_name, 'amount': float(item_amount)})
-        save_expenses(st.session_state.expenses)
+        user_data['expenses'].append({'name': item_name, 'amount': float(item_amount)})
+        save_user_data(username, user_data)
 
 # Function to clear all expenses
-def clear_expenses():
-    st.session_state.expenses = []
-    save_expenses(st.session_state.expenses)
+def clear_expenses(username):
+    user_data = load_user_data(username)
+    user_data['expenses'] = []
+    save_user_data(username, user_data)
 
-st.title('EXPENSE TRACKER')
+st.title('Expense Tracker')
 
-item_name = st.text_input('Item Name')
-item_amount = st.text_input('Item Amount (₹)')
+# Registration form
+st.subheader('Register')
+new_username = st.text_input('New Username')
+new_password = st.text_input('New Password', type='password')
+if st.button('Register'):
+    if new_username and new_password:
+        if os.path.exists(os.path.join(USER_DATA_DIR, f"{new_username}.json")):
+            st.error('Username already exists. Please choose a different username.')
+        else:
+            register_user(new_username, new_password)
+            st.success('Registration successful! You can now login.')
 
-if st.button('Add Expense'):
-    add_expense(item_name, item_amount)
+# Login form
+st.subheader('Login')
+username = st.text_input('Username')
+password = st.text_input('Password', type='password')
+if st.button('Login'):
+    if authenticate_user(username, password):
+        st.session_state.authenticated = True
+        st.success('Login successful!')
+    else:
+        st.error('Invalid username or password. Please try again.')
 
-if st.button('Clear All'):
-    clear_expenses()
+if st.session_state.get('authenticated'):
+    if 'expenses' not in st.session_state:
+        st.session_state.expenses = []
 
-total_amount = sum(expense['amount'] for expense in st.session_state.expenses)
+    item_name = st.text_input('Item Name')
+    item_amount = st.text_input('Item Amount (₹)')
 
-st.write('## Expenses')
-for expense in st.session_state.expenses:
-    st.write(f"{expense['name']}: ₹{expense['amount']}")
+    if st.button('Add Expense'):
+        add_expense(username, item_name, item_amount)
 
-st.write(f'## Total: ₹{total_amount}')
+    if st.button('Clear All'):
+        clear_expenses(username)
+
+    user_data = load_user_data(username)
+    total_amount = sum(expense['amount'] for expense in user_data.get('expenses', []))
+
+    st.write('## Expenses')
+    for expense in user_data.get('expenses', []):
+        st.write(f"{expense['name']}: ₹{expense['amount']}")
+
+    st.write(f'## Total: ₹{total_amount}')
+elif st.session_state.get('authenticated') is False:
+    st.warning('Please login to access the expense tracker.')
