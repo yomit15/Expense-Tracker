@@ -51,9 +51,9 @@ def add_expense(username, item_name, item_amount):
         save_user_data(username, user_data)
 
 # Function to remove selected expenses
-def remove_expenses(username, selected_indices):
+def remove_expense(username, item_name):
     user_data = load_user_data(username)
-    user_data['expenses'] = [expense for i, expense in enumerate(user_data['expenses']) if i not in selected_indices]
+    user_data['expenses'] = [expense for expense in user_data['expenses'] if expense['name'] != item_name]
     save_user_data(username, user_data)
 
 # Function to clear all expenses
@@ -64,54 +64,64 @@ def clear_expenses(username):
 
 st.sidebar.title('Expense Tracker')
 
-# Registration form
-st.sidebar.subheader('Register')
-new_username = st.sidebar.text_input('New Username')
-new_password = st.sidebar.text_input('New Password', type='password')
+# Main content area
 if st.sidebar.button('Register'):
-    if new_username and new_password:
-        if os.path.exists(os.path.join(USER_DATA_DIR, f"{new_username}.json")):
-            st.sidebar.error('Username already exists. Please choose a different username.')
+    st.session_state.page = 'Register'
+elif st.sidebar.button('Login'):
+    st.session_state.page = 'Login'
+
+if st.session_state.get('page') == 'Register':
+    st.subheader('Register')
+    new_username = st.text_input('New Username')
+    new_password = st.text_input('New Password', type='password')
+    if st.button('Register'):
+        if new_username and new_password:
+            if os.path.exists(os.path.join(USER_DATA_DIR, f"{new_username}.json")):
+                st.error('Username already exists. Please choose a different username.')
+            else:
+                register_user(new_username, new_password)
+                st.success('Registration successful! You can now login.')
+                st.session_state.page = 'Login'
+
+elif st.session_state.get('page') == 'Login':
+    st.subheader('Login')
+    username = st.text_input('Username')
+    password = st.text_input('Password', type='password')
+    if st.button('Login'):
+        if authenticate_user(username, password):
+            st.session_state.authenticated = True
+            st.success('Login successful!')
+            st.session_state.page = 'Add Expense'
         else:
-            register_user(new_username, new_password)
-            st.sidebar.success('Registration successful! You can now login.')
+            st.session_state.authenticated = False
+            st.error('Invalid username or password. Please try again.')
 
-# Login form
-st.sidebar.subheader('Login')
-username = st.sidebar.text_input('Username')
-password = st.sidebar.text_input('Password', type='password')
-if st.sidebar.button('Login'):
-    if authenticate_user(username, password):
-        st.session_state.authenticated = True
-        st.sidebar.success('Login successful!')
+if st.session_state.get('page') == 'Add Expense':
+    if st.session_state.get('authenticated'):
+        if 'expenses' not in st.session_state:
+            st.session_state.expenses = []
+
+        st.subheader('Add Expense')
+        item_name = st.text_input('Item Name')
+        item_amount = st.text_input('Item Amount (₹)')
+
+        if st.button('Add Expense'):
+            add_expense(username, item_name, item_amount)
+
+        if st.button('Clear All'):
+            clear_expenses(username)
+
+        user_data = load_user_data(username)
+        total_amount = sum(expense['amount'] for expense in user_data.get('expenses', []))
+
+        st.write('## Expenses')
+        selected_expense = st.selectbox('Select expense to remove', [''] + [expense['name'] for expense in user_data.get('expenses', [])])
+        if st.button('Remove Expense') and selected_expense:
+            remove_expense(username, selected_expense)
+
+        for expense in user_data.get('expenses', []):
+            st.write(f"{expense['name']}: ₹{expense['amount']}")
+
+        st.write(f'## Total: ₹{total_amount}')
     else:
-        st.session_state.authenticated = False
-        st.sidebar.error('Invalid username or password. Please try again.')
-
-if st.session_state.get('authenticated'):
-    if 'expenses' not in st.session_state:
-        st.session_state.expenses = []
-
-    item_name = st.text_input('Item Name')
-    item_amount = st.text_input('Item Amount (₹)')
-
-    if st.button('Add Expense'):
-        add_expense(username, item_name, item_amount)
-
-    if st.button('Clear All'):
-        clear_expenses(username)
-
-    user_data = load_user_data(username)
-    total_amount = sum(expense['amount'] for expense in user_data.get('expenses', []))
-
-    st.write('## Expenses')
-    selected_indices = st.multiselect('Select expenses to remove', range(len(user_data.get('expenses', []))), [])
-    if st.button('Remove Selected Expenses'):
-        remove_expenses(username, selected_indices)
-
-    for i, expense in enumerate(user_data.get('expenses', [])):
-        st.write(f"{expense['name']}: ₹{expense['amount']}")
-
-    st.write(f'## Total: ₹{total_amount}')
-elif st.session_state.get('authenticated') is False:
-    st.warning('Please login to access the expense tracker.')
+        st.warning('Please login to access the expense tracker.')
