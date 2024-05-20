@@ -50,6 +50,12 @@ def add_expense(username, item_name, item_amount):
         user_data['expenses'].append({'name': item_name, 'amount': float(item_amount)})
         save_user_data(username, user_data)
 
+# Function to remove selected expenses
+def remove_expenses(username, selected_indices):
+    user_data = load_user_data(username)
+    user_data['expenses'] = [expense for i, expense in enumerate(user_data['expenses']) if i not in selected_indices]
+    save_user_data(username, user_data)
+
 # Function to clear all expenses
 def clear_expenses(username):
     user_data = load_user_data(username)
@@ -79,6 +85,7 @@ if st.sidebar.button('Login'):
         st.session_state.authenticated = True
         st.sidebar.success('Login successful!')
     else:
+        st.session_state.authenticated = False
         st.sidebar.error('Invalid username or password. Please try again.')
 
 if st.session_state.get('authenticated'):
@@ -98,7 +105,11 @@ if st.session_state.get('authenticated'):
     total_amount = sum(expense['amount'] for expense in user_data.get('expenses', []))
 
     st.write('## Expenses')
-    for expense in user_data.get('expenses', []):
+    selected_indices = st.multiselect('Select expenses to remove', range(len(user_data.get('expenses', []))), [])
+    if st.button('Remove Selected Expenses'):
+        remove_expenses(username, selected_indices)
+
+    for i, expense in enumerate(user_data.get('expenses', [])):
         st.write(f"{expense['name']}: ₹{expense['amount']}")
 
     st.write(f'## Total: ₹{total_amount}')
