@@ -13,6 +13,7 @@ st.set_page_config(
 EXPENSE_FILE = 'expenses.json'
 
 # Load expenses from file
+@st.cache
 def load_expenses():
     if os.path.exists(EXPENSE_FILE):
         try:
@@ -32,19 +33,19 @@ if 'session_id' not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
 # Clear expenses for new session
+@st.cache
+def clear_expenses():
+    return []
+
+# Initialize session state for expenses if it doesn't exist
 if 'expenses' not in st.session_state:
-    st.session_state.expenses = []
+    st.session_state.expenses = clear_expenses()
 
 # Function to add an expense
 def add_expense(item_name, item_amount):
     if item_name and item_amount:
         st.session_state.expenses.append({'name': item_name, 'amount': float(item_amount)})
         save_expenses(st.session_state.expenses)
-
-# Function to clear all expenses for a new session
-def clear_expenses():
-    st.session_state.expenses = []
-    save_expenses(st.session_state.expenses)
 
 st.title('EXPENSE TRACKER')
 
@@ -55,7 +56,7 @@ if st.button('Add Expense'):
     add_expense(item_name, item_amount)
 
 if st.button('Clear All'):
-    clear_expenses()
+    st.session_state.expenses = clear_expenses()
 
 total_amount = sum(expense['amount'] for expense in st.session_state.expenses)
 
