@@ -1,7 +1,7 @@
 import streamlit as st
 import json
 import os
-import uuid  # Import the uuid module
+import uuid
 
 st.set_page_config(
     page_title="Expense Tracker",
@@ -27,13 +27,11 @@ def save_expenses(expenses):
     with open(EXPENSE_FILE, 'w') as f:
         json.dump(expenses, f)
 
-# Initialize session state for expenses if it doesn't exist
-if 'expenses' not in st.session_state:
-    st.session_state.expenses = load_expenses()
-
 # Generate a unique session ID if it doesn't exist
 if 'session_id' not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
+    # Clear expenses for new session
+    st.session_state.expenses = []
 
 # Function to add an expense
 def add_expense(item_name, item_amount):
