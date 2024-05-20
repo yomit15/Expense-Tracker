@@ -65,10 +65,12 @@ def clear_expenses(username):
 st.sidebar.title('Expense Tracker')
 
 # Main content area
-if 'page' not in st.session_state:
+if st.sidebar.button('Register'):
+    st.session_state.page = 'Register'
+elif st.sidebar.button('Login'):
     st.session_state.page = 'Login'
 
-if st.session_state.page == 'Register':
+if st.session_state.get('page') == 'Register':
     st.subheader('Register')
     new_username = st.text_input('New Username')
     new_password = st.text_input('New Password', type='password')
@@ -83,7 +85,7 @@ if st.session_state.page == 'Register':
         else:
             st.error('Please enter both username and password.')
 
-elif st.session_state.page == 'Login':
+elif st.session_state.get('page') == 'Login':
     st.subheader('Login')
     username = st.text_input('Username')
     password = st.text_input('Password', type='password')
@@ -96,8 +98,8 @@ elif st.session_state.page == 'Login':
             st.session_state.authenticated = False
             st.error('Invalid username or password. Please try again.')
 
-if st.session_state.page == 'Add Expense':
-    if st.session_state.authenticated:
+if st.session_state.get('page') == 'Add Expense':
+    if st.session_state.get('authenticated'):
         if 'expenses' not in st.session_state:
             st.session_state.expenses = []
 
