@@ -6,7 +6,7 @@ import uuid
 st.set_page_config(
     page_title="Expense Tracker",
     page_icon="icon.png",
-    layout="centered",
+    layout="wide",
 )
 
 # Directory to store user data
@@ -56,30 +56,30 @@ def clear_expenses(username):
     user_data['expenses'] = []
     save_user_data(username, user_data)
 
-st.title('Expense Tracker')
+st.sidebar.title('Expense Tracker')
 
 # Registration form
-st.subheader('Register')
-new_username = st.text_input('New Username')
-new_password = st.text_input('New Password', type='password')
-if st.button('Register'):
+st.sidebar.subheader('Register')
+new_username = st.sidebar.text_input('New Username')
+new_password = st.sidebar.text_input('New Password', type='password')
+if st.sidebar.button('Register'):
     if new_username and new_password:
         if os.path.exists(os.path.join(USER_DATA_DIR, f"{new_username}.json")):
-            st.error('Username already exists. Please choose a different username.')
+            st.sidebar.error('Username already exists. Please choose a different username.')
         else:
             register_user(new_username, new_password)
-            st.success('Registration successful! You can now login.')
+            st.sidebar.success('Registration successful! You can now login.')
 
 # Login form
-st.subheader('Login')
-username = st.text_input('Username')
-password = st.text_input('Password', type='password')
-if st.button('Login'):
+st.sidebar.subheader('Login')
+username = st.sidebar.text_input('Username')
+password = st.sidebar.text_input('Password', type='password')
+if st.sidebar.button('Login'):
     if authenticate_user(username, password):
         st.session_state.authenticated = True
-        st.success('Login successful!')
+        st.sidebar.success('Login successful!')
     else:
-        st.error('Invalid username or password. Please try again.')
+        st.sidebar.error('Invalid username or password. Please try again.')
 
 if st.session_state.get('authenticated'):
     if 'expenses' not in st.session_state:
