@@ -30,7 +30,9 @@ def save_expenses(expenses):
 # Generate a unique session ID if it doesn't exist
 if 'session_id' not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
-    # Clear expenses for new session
+
+# Clear expenses for new session
+if 'expenses' not in st.session_state:
     st.session_state.expenses = []
 
 # Function to add an expense
@@ -39,7 +41,7 @@ def add_expense(item_name, item_amount):
         st.session_state.expenses.append({'name': item_name, 'amount': float(item_amount)})
         save_expenses(st.session_state.expenses)
 
-# Function to clear all expenses
+# Function to clear all expenses for a new session
 def clear_expenses():
     st.session_state.expenses = []
     save_expenses(st.session_state.expenses)
